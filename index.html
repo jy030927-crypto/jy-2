@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的小手机</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Helvetica Neue", sans-serif;
+            background: #e0e5ec;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 页面切换容器 */
+        .page-view {
+            transition: opacity 0.3s ease;
+        }
+
+        /* 手机容器通用样式 */
+        .iphone-container {
+            width: 375px;
+            height: 750px;
+            border-radius: 30px;
+            box-shadow: 
+                0 0 0 8px #1f1f1f,
+                20px 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+        }
+
+        /* 主页特定样式 */
+        .home-style {
+            background: linear-gradient(180deg, #f0f4f8 0%, #d9e2ec 100%);
+            padding-top: 20px;
+        }
+
+        /* 纪念日页特定样式 */
+        .memo-style {
+            background: #fff;
+        }
+
+        /* 状态栏 - 简化 */
+        .status-bar {
+            height: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            z-index: 10;
+        }
+
+        /* ================== 主页样式 ================== */
+        .top-section { padding: 0 25px; margin-bottom: 25px; }
+        .header-card {
+            width: 100%; height: 200px;
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.4);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            gap: 20px;
+        }
+        .avatar {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            background: url('https://api.dicebear.com/7.x/avataaars/svg?seed=Felix') no-repeat center center;
+            background-size: cover; background-color: #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 4px solid white;
+            cursor: pointer;
+        }
+        .input-box {
+            width: 80%; height: 40px;
+            background: #fff; border-radius: 20px;
+            padding: 0 20px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+            color: #333; font-size: 14px;
+            border: 1px solid rgba(0,0,0,0.05);
+            outline: none; text-align: center;
+            transition: border-color 0.3s;
+        }
+        .input-box:focus { border-color: #aaa; }
+        
+        .memorial-link {
+            display: block; width: 100%; text-decoration: none;
+            transition: transform 0.2s; position: relative; cursor: pointer;
+        }
+        .memorial-link:active { transform: scale(0.96); }
+        .memorial-img {
+            width: 100%; aspect-ratio: 1/1.2; object-fit: cover;
+            border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border: 4px solid #fff;
+        }
+        .memorial-info-overlay {
+            position: absolute; bottom: 10px; left: 10px; right: 10px;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px);
+            padding: 8px; border-radius: 12px; text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            animation: fadeIn 0.5s ease;
+        }
+        .memorial-title {
+            font-size: 12px; color: #555; margin-bottom: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .memorial-days {
+            font-size: 20px; font-weight: 800; color: #FF9A9E; line-height: 1;
+        }
+        .memorial-days small { font-size: 10px; color: #888; font-weight: normal; }
+        
+        .main-content {
+            flex: 1; display: flex; padding: 0 25px; gap: 20px; align-items: flex-start;
+        }
+        .left-panel { width: 45%; display: flex; flex-direction: column; }
+        .right-panel {
+            flex: 1; display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 15px; align-content: start;
+        }
+        .app-item {
+            display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+        }
+        .app-icon {
+            width: 55px; height: 55px; border-radius: 14px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 24px; color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s; position: relative;
+        }
+        .app-icon::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%);
+            pointer-events: none;
+        }
+        .app-item:hover .app-icon { transform: translateY(-2px); }
+        .app-item:active .app-icon { transform: scale(0.95); }
+        .app-name { font-size: 11px; color: #444; font-weight: 500; }
+        
+        .icon-wechat { background: linear-gradient(135deg, #09B83E, #079632); }
+        .icon-world { background: linear-gradient(135deg, #2b5876, #4e4376); }
+        .icon-settings { background: linear-gradient(135deg, #8E9EAB, #eef2f3); color: #555; }
+        .icon-beautify { background: linear-gradient(135deg, #FF9A9E, #FECFEF); }
+        
+        .dock-container { padding: 20px; display: flex; justify-content: center; margin-bottom: 10px; }
+        .dock {
+            width: 320px; height: 90px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-radius: 30px; display: flex; justify-content: space-evenly;
+            align-items: center;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.3);
+        }
+        .dock-item {
+            width: 65px; height: 65px; border-radius: 16px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 28px; color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s ease; cursor: pointer; position: relative;
+        }
+        .dock-item::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%);
+            pointer-events: none;
+        }
+        .dock-item:hover { transform: translateY(-5px); }
+        .dock-item:active { transform: scale(0.95); }
+        .icon-phone { background: linear-gradient(135deg, #42e695, #3bb2b8); }
+        .icon-novel { background: linear-gradient(135deg, #F6D365, #FDA085); }
+        .icon-forum { background: linear-gradient(135deg, #84fab0, #8fd3f4); }
+
+        /* ================== 纪念日页样式 ================== */
+        .header {
+            padding: 20px 25px; height: 80px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
+            z-index: 20; position: relative;
+        }
+        .nav-btn {
+            font-size: 24px; color: #333; text-decoration: none;
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none; background: none; position: relative;
+        }
+        .page-title {
+            font-size: 20px; font-weight: 600; letter-spacing: 1px;
+            display: flex; align-items: center; justify-content: center; flex: 1;
+        }
+        .dropdown-menu {
+            position: absolute; top: 60px; right: 20px;
+            background: white; border-radius: 15px;
+            padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            width: 160px; display: none; flex-direction: column;
+            animation: fadeIn 0.2s ease;
+        }
+        .menu-item {
+            padding: 12px 15px; display: flex; align-items: center; gap: 10px;
+            color: #444; font-size: 14px; border-radius: 10px;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .menu-item:hover { background: #f5f5f5; }
+        
+        .content-area {
+            flex: 1; padding: 10px 25px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 20px;
+            position: relative; z-index: 1;
+        }
+        .content-area::-webkit-scrollbar { width: 0px; }
+        
+        .bg-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-size: cover; background-position: center;
+            opacity: 0.1; z-index: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        .add-card {
+            width: 100%; height: 180px; background: #f8f9fa;
+            border: 2px dashed #ddd; border-radius: 25px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.3s; flex-shrink: 0;
+        }
+        .add-card:hover { background: #f0f0f0; border-color: #bbb; }
+        .add-card:active { transform: scale(0.98); }
+        .plus-circle {
+            width: 60px; height: 60px; border-radius: 50%; border: 2px solid #333;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 30px; color: #333;
+        }
+        
+        .memo-card {
+            width: 100%; height: 180px;
+            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
+            border-radius: 25px; padding: 25px; color: white;
+            position: relative; box-shadow: 0 10px 20px rgba(255, 154, 158, 0.3);
+            display: flex; flex-direction: column; justify-content: space-between;
+            flex-shrink: 0; animation: fadeIn 0.4s ease;
+            user-select: none; -webkit-user-select: none;
+        }
+        .memo-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .memo-title { font-size: 18px; font-weight: 500; opacity: 0.9; }
+        .delete-btn {
+            background: rgba(255,255,255,0.2); border: none;
+            width: 30px; height: 30px; border-radius: 50%; color: white;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .delete-btn:hover { background: rgba(255,255,255,0.4); }
+        .memo-days { text-align: center; margin: 10px 0; }
+        .day-number { font-size: 48px; font-weight: 800; line-height: 1; }
+        .day-label { font-size: 14px; opacity: 0.8; margin-left: 5px; }
+        .memo-date {
+            font-size: 14px; opacity: 0.8; background: rgba(255,255,255,0.2);
+            padding: 5px 12px; border-radius: 12px; align-self: flex-start;
+        }
+        .pin-icon {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            background: rgba(255,255,255,0.3); padding: 4px 10px;
+            border-radius: 10px; font-size: 12px; display: flex;
+            align-items: center; gap: 4px; backdrop-filter: blur(4px);
+        }
+
+        /* ================== 通用弹窗 ================== */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal {
+            width: 80%; background: white; border-radius: 20px;
+            padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .modal h3 { margin-bottom: 20px; text-align: center; color: #333; }
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; margin-bottom: 8px; font-size: 14px; color: #666; }
+        .form-input {
+            width: 100%; padding: 12px; border: 1px solid #ddd;
+            border-radius: 10px; font-size: 16px; outline: none;
+            transition: border-color 0.3s;
+        }
+        .form-input:focus { border-color: #FF9A9E; }
+        
+        .type-selector { display: flex; gap: 10px; margin-bottom: 15px; }
+        .type-option {
+            flex: 1; padding: 10px; text-align: center;
+            border: 1px solid #ddd; border-radius: 10px;
+            cursor: pointer; font-size: 14px; color: #666; transition: all 0.2s;
+        }
+        .type-option.active { background: #FF9A9E; color: white; border-color: #FF9A9E; }
+        
+        .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
+        .btn {
+            flex: 1; padding: 12px; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+        }
+        .btn-cancel { background: #f0f0f0; color: #666; }
+        .btn-confirm { background: #FF9A9E; color: white; }
+        
+        .file-upload-label {
+            display: block; padding: 10px; border: 2px dashed #ddd;
+            border-radius: 10px; text-align: center; color: #888;
+            cursor: pointer; font-size: 14px;
+        }
+        .file-upload-label:hover { border-color: #FF9A9E; background: #fff8f8; }
+        
+        .world-book-combo { position: relative; display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <!-- ================== 主页 (Page 1) ================== -->
+    <div id="page-home" class="page-view">
+        <div class="iphone-container home-style">
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>
+                    <i class="fas fa-signal"></i>&nbsp;
+                    <i class="fas fa-wifi"></i>&nbsp;
+                    <i class="fas fa-battery-full"></i>
+                </span>
+            </div>
+
+            <!-- 顶部区域 -->
+            <div class="top-section">
+                <div class="header-card">
+                    <div class="avatar" onclick="openAvatarModal()"></div>
+                    <input type="text" class="input-box" placeholder="请输入内容...">
+                </div>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="main-content">
+                <div class="left-panel">
+                    <!-- 跳转到纪念日页 -->
+                    <a href="#" onclick="switchToMemo(); return false;" class="memorial-link">
+                        <img id="homeMemorialImg" src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="恋爱纪念" class="memorial-img">
+                        <div class="memorial-info-overlay" id="homeMemorialInfo" style="display: none;">
+                            <div class="memorial-title" id="pinnedTitle">纪念日</div>
+                            <div class="memorial-days" id="pinnedDays">0<small>天</small></div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="right-panel">
+                    <div class="app-item">
+                        <div class="app-icon icon-wechat"><i class="fab fa-weixin"></i></div>
+                        <span class="app-name">微信</span>
+                    </div>
+                    <div class="app-item">
+                        <div class="app-icon icon-world"><div class="world-book-combo"><i class="fas fa-earth-asia"></i></div></div>
+                        <span class="app-name">世界书</span>
+                    </div>
+                    <div class="app-item">
+                        <div class="app-icon icon-settings"><i class="fas fa-gear"></i></div>
+                        <span class="app-name">设置</span>
+                    </div>
+                    <div class="app-item">
+                        <div class="app-icon icon-beautify"><i class="fas fa-palette"></i></div>
+                        <span class="app-name">美化</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dock栏 -->
+            <div class="dock-container">
+                <div class="dock">
+                    <div class="dock-item icon-phone" title="手机"><i class="fas fa-mobile-screen-button"></i></div>
+                    <div class="dock-item icon-novel" title="小说"><i class="fas fa-book-open"></i></div>
+                    <div class="dock-item icon-forum" title="论坛"><i class="fas fa-comments"></i></div>
+                </div>
+            </div>
+            
+            <!-- 头像弹窗 -->
+            <div class="modal-overlay" id="avatarModalOverlay">
+                <div class="modal">
+                    <h3>设置头像</h3>
+                    <div class="form-group">
+                        <label class="form-label">图片链接</label>
+                        <input type="text" class="form-input" id="avatarUrlInput" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">或 上传本地图片</label>
+                        <label for="localAvatarInput" class="file-upload-label">
+                            <i class="fas fa-cloud-upload-alt"></i> 点击选择文件
+                        </label>
+                        <input type="file" id="localAvatarInput" accept="image/*" style="display:none;" onchange="handleAvatarFile(this)">
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-cancel" onclick="closeAvatarModal()">取消</button>
+                        <button class="btn btn-confirm" onclick="saveAvatar()">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== 纪念日页 (Page 2) ================== -->
+    <div id="page-memo" class="page-view" style="display: none;">
+        <div class="iphone-container memo-style">
+            <!-- 背景层 -->
+            <div class="bg-overlay" id="bgOverlay"></div>
+
+            <!-- 头部 -->
+            <div class="header">
+                <!-- 返回主页 -->
+                <button class="nav-btn" onclick="switchToHome()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="page-title">
+                    <span>纪念日</span>
+                </div>
+                <button class="nav-btn" onclick="toggleMenu()">
+                    <i class="fas fa-ellipsis"></i>
+                </button>
+                
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="menu-item" onclick="openCoverModal()">
+                        <i class="fas fa-image"></i> 更改封面
+                    </div>
+                </div>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="content-area" id="listContainer">
+                <div class="add-card" onclick="openModal()">
+                    <div class="plus-circle"><i class="fas fa-plus"></i></div>
+                </div>
+            </div>
+
+            <!-- 添加纪念日弹窗 -->
+            <div class="modal-overlay" id="modalOverlay">
+                <div class="modal">
+                    <h3>新建纪念日</h3>
+                    <div class="form-group">
+                        <label class="form-label">类型</label>
+                        <div class="type-selector">
+                            <div class="type-option active" onclick="selectType('past', this)">正数日</div>
+                            <div class="type-option" onclick="selectType('future', this)">倒数日</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">名称</label>
+                        <input type="text" class="form-input" id="titleInput" placeholder="例如：在一起">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">日期</label>
+                        <input type="date" class="form-input" id="dateInput">
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+                        <button class="btn btn-confirm" onclick="saveMemorial()">确定</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 更改封面弹窗 -->
+            <div class="modal-overlay" id="coverModalOverlay">
+                <div class="modal">
+                    <h3>更改背景封面</h3>
+                    <div class="form-group">
+                        <label class="form-label">网络图片链接</label>
+                        <input type="text" class="form-input" id="coverInput" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">或 上传本地图片</label>
+                        <label for="localCoverInput" class="file-upload-label">
+                            <i class="fas fa-cloud-upload-alt"></i> 点击选择文件
+                        </label>
+                        <input type="file" id="localCoverInput" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
+                    </div>
+                    <div class="form-group">
+                        <div style="font-size:12px; color:#999; margin-bottom:5px;">快速预设：</div>
+                        <div style="display:flex; gap:10px;">
+                            <div style="width:40px; height:40px; background:#FF9A9E; border-radius:8px; cursor:pointer;" onclick="setQuickCover('linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%)')"></div>
+                            <div style="width:40px; height:40px; background:#a18cd1; border-radius:8px; cursor:pointer;" onclick="setQuickCover('linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)')"></div>
+                            <div style="width:40px; height:40px; background-image:url('https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=100'); background-size:cover; border-radius:8px; cursor:pointer;" onclick="setQuickCover('url(https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=600)')"></div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-cancel" onclick="closeCoverModal()">取消</button>
+                        <button class="btn btn-confirm" onclick="saveCover()">确定</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 置顶选择弹窗 (长按触发) -->
+            <div class="modal-overlay" id="pinModalOverlay">
+                <div class="modal" style="width: 70%;">
+                    <h3>管理卡片</h3>
+                    <p style="text-align: center; margin-bottom: 20px; color: #666;">您想对这个纪念日做什么？</p>
+                    <div class="modal-actions" style="flex-direction: column; gap: 10px;">
+                        <button class="btn btn-confirm" onclick="pinCurrent()">置顶</button>
+                        <button class="btn btn-cancel" style="background: #ffecb3; color: #666;" onclick="unpinCurrent()">取消置顶</button>
+                        <button class="btn btn-cancel" onclick="closePinModal()">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================== 公共/切换逻辑 ==================
+        function switchToMemo() {
+            document.getElementById('page-home').style.display = 'none';
+            document.getElementById('page-memo').style.display = 'block';
+            // 切换到纪念日页时重新渲染列表（确保数据最新）
+            renderList();
+        }
+
+        function switchToHome() {
+            document.getElementById('page-memo').style.display = 'none';
+            document.getElementById('page-home').style.display = 'block';
+            // 切换回主页时更新数据
+            loadSharedData();
+        }
+
+        // ================== 主页逻辑 ==================
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化两个页面的数据
+            loadSharedData();
+            loadUserData();
+            loadMemoData(); // 加载纪念日页数据
+            
+            document.querySelector('.input-box').addEventListener('input', handleInputSave);
+            
+            // 初始化日期选择器为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+        });
+
+        function loadUserData() {
+            const avatar = localStorage.getItem('user_avatar');
+            if (avatar) document.querySelector('.avatar').style.backgroundImage = `url('${avatar}')`;
+            
+            const text = localStorage.getItem('user_status_text');
+            if (text) document.querySelector('.input-box').value = text;
+        }
+
+        function handleInputSave(e) {
+            localStorage.setItem('user_status_text', e.target.value);
+        }
+
+        function openAvatarModal() { document.getElementById('avatarModalOverlay').style.display = 'flex'; }
+        function closeAvatarModal() { document.getElementById('avatarModalOverlay').style.display = 'none'; }
+
+        function handleAvatarFile(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('avatarUrlInput').value = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveAvatar() {
+            const url = document.getElementById('avatarUrlInput').value;
+            if (url) {
+                localStorage.setItem('user_avatar', url);
+                document.querySelector('.avatar').style.backgroundImage = `url('${url}')`;
+                closeAvatarModal();
+            }
+        }
+
+        function loadSharedData() {
+            // 同步封面
+            const sharedCover = localStorage.getItem('shared_cover_image');
+            const imgEl = document.getElementById('homeMemorialImg');
+            if (sharedCover && imgEl) {
+                let src = sharedCover;
+                if (sharedCover.startsWith('url(')) {
+                    src = sharedCover.slice(4, -1).replace(/["']/g, "");
+                }
+                if (src.startsWith('http') || src.startsWith('data:image')) {
+                    imgEl.src = src;
+                }
+            }
+            
+            // 同步置顶纪念日
+            const memorialsStr = localStorage.getItem('love_memorials');
+            if (memorialsStr) {
+                const memorials = JSON.parse(memorialsStr);
+                const pinnedItem = memorials.find(m => m.isPinned);
+                const infoEl = document.getElementById('homeMemorialInfo');
+                
+                if (pinnedItem) {
+                    const days = calculateDays(pinnedItem.date);
+                    const label = pinnedItem.type === 'future' ? '天后' : '天';
+                    document.getElementById('pinnedTitle').textContent = pinnedItem.title;
+                    document.getElementById('pinnedDays').innerHTML = `${Math.abs(days)}<small>${label}</small>`;
+                    infoEl.style.display = 'block';
+                } else {
+                    infoEl.style.display = 'none';
+                }
+            }
+        }
+
+        function calculateDays(dateStr) {
+            const targetDate = new Date(dateStr);
+            const today = new Date();
+            targetDate.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+            const diffTime = today - targetDate;
+            return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        // ================== 纪念日页逻辑 ==================
+        let memorials = [];
+        let currentType = 'past';
+        let currentLongPressIndex = -1;
+
+        function loadMemoData() {
+            const savedData = localStorage.getItem('love_memorials');
+            if (savedData) {
+                memorials = JSON.parse(savedData);
+                renderList();
+            }
+            const savedCover = localStorage.getItem('page_cover');
+            if (savedCover) applyCover(savedCover);
+        }
+
+        function selectType(type, element) {
+            currentType = type;
+            document.querySelectorAll('.type-option').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        function renderList() {
+            const container = document.getElementById('listContainer');
+            // 保存添加按钮，清空其他
+            const addCard = document.querySelector('.add-card');
+            // 为了简单，我们每次都重建
+            container.innerHTML = '';
+            
+            const sortedMemorials = [...memorials].sort((a, b) => {
+                return (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0);
+            });
+            
+            sortedMemorials.forEach((item) => {
+                const originalIndex = memorials.findIndex(m => m.id === item.id);
+                const days = calculateDays(item.date);
+                const dayValue = Math.abs(days);
+                const label = item.type === 'future' ? '天后' : '天';
+                const icon = item.type === 'future' ? '<i class="fas fa-hourglass-half"></i>' : '<i class="fas fa-heart"></i>';
+                
+                const gradients = [
+                    'linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%)',
+                    'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+                    'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
+                    'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)'
+                ];
+                const colorIndex = item.id % gradients.length;
+                const bgStyle = gradients[colorIndex];
+                const pinHtml = item.isPinned ? '<div class="pin-icon"><i class="fas fa-thumbtack"></i> 已置顶</div>' : '';
+
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'memo-card';
+                cardDiv.style.background = bgStyle;
+                cardDiv.innerHTML = `
+                    ${pinHtml}
+                    <div class="memo-top">
+                        <div class="memo-title">${icon} ${item.title}</div>
+                        <button class="delete-btn" onclick="deleteMemorial(${originalIndex}); event.stopPropagation();">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="memo-days">
+                        <span class="day-number">${dayValue}</span>
+                        <span class="day-label">${label}</span>
+                    </div>
+                    <div class="memo-date">目标日: ${item.date}</div>
+                `;
+                addLongPressEvent(cardDiv, originalIndex);
+                container.appendChild(cardDiv);
+            });
+            container.appendChild(addCard);
+        }
+        
+        function addLongPressEvent(element, index) {
+            let timer;
+            element.addEventListener('touchstart', (e) => {
+                timer = setTimeout(() => { showPinModal(index); }, 600);
+            });
+            element.addEventListener('touchend', () => clearTimeout(timer));
+            element.addEventListener('touchmove', () => clearTimeout(timer));
+            element.addEventListener('mousedown', () => {
+                timer = setTimeout(() => { showPinModal(index); }, 600);
+            });
+            element.addEventListener('mouseup', () => clearTimeout(timer));
+            element.addEventListener('mouseleave', () => clearTimeout(timer));
+        }
+
+        function showPinModal(index) {
+            currentLongPressIndex = index;
+            document.getElementById('pinModalOverlay').style.display = 'flex';
+        }
+        function closePinModal() {
+            document.getElementById('pinModalOverlay').style.display = 'none';
+            currentLongPressIndex = -1;
+        }
+        function pinCurrent() {
+            if (currentLongPressIndex > -1) {
+                memorials.forEach(m => m.isPinned = false);
+                memorials[currentLongPressIndex].isPinned = true;
+                saveAndRefresh();
+                closePinModal();
+            }
+        }
+        function unpinCurrent() {
+            if (currentLongPressIndex > -1) {
+                memorials[currentLongPressIndex].isPinned = false;
+                saveAndRefresh();
+                closePinModal();
+            }
+        }
+        function saveAndRefresh() {
+            localStorage.setItem('love_memorials', JSON.stringify(memorials));
+            renderList();
+        }
+        
+        function openModal() { document.getElementById('modalOverlay').style.display = 'flex'; }
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('titleInput').value = '';
+        }
+
+        function saveMemorial() {
+            const title = document.getElementById('titleInput').value.trim();
+            const date = document.getElementById('dateInput').value;
+            if (!title || !date) { alert('请填写完整信息'); return; }
+            memorials.push({
+                title: title, date: date, type: currentType, id: Date.now(), isPinned: false
+            });
+            localStorage.setItem('love_memorials', JSON.stringify(memorials));
+            renderList();
+            closeModal();
+        }
+
+        function deleteMemorial(index) {
+            if(confirm('确定要删除这个纪念日吗？')) {
+                memorials.splice(index, 1);
+                localStorage.setItem('love_memorials', JSON.stringify(memorials));
+                renderList();
+            }
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('dropdownMenu');
+            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function openCoverModal() {
+            document.getElementById('coverModalOverlay').style.display = 'flex';
+            toggleMenu();
+        }
+        function closeCoverModal() { document.getElementById('coverModalOverlay').style.display = 'none'; }
+        function setQuickCover(value) { document.getElementById('coverInput').value = value; }
+        
+        function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) { document.getElementById('coverInput').value = e.target.result; };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveCover() {
+            const cover = document.getElementById('coverInput').value;
+            if(cover) {
+                localStorage.setItem('shared_cover_image', cover);
+                alert("已更新主页纪念日封面");
+                closeCoverModal();
+            }
+        }
+        
+        function applyCover(value) {
+            const overlay = document.getElementById('bgOverlay');
+            if (value.startsWith('url') || value.startsWith('http') || value.startsWith('data:image')) {
+                const bgValue = (value.startsWith('http') || value.startsWith('data:image')) ? `url(${value})` : value;
+                overlay.style.backgroundImage = bgValue;
+                overlay.style.background = bgValue + " center/cover no-repeat";
+            } else {
+                overlay.style.background = value;
+            }
+            overlay.style.opacity = '1';
+        }
+    </script>
+</body>
+</html>
