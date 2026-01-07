@@ -2,813 +2,1331 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的小手机</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>仿iPhone主页</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --bg-color: #f2f2f2;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-color: #333;
+            --secondary-text: #666;
+            --accent-color: #007aff;
+            --dock-bg: rgba(255, 255, 255, 0.45);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1c1c1e;
+            --card-bg: rgba(44, 44, 46, 0.85);
+            --text-color: #fff;
+            --secondary-text: #aeaeb2;
+            --accent-color: #0a84ff;
+            --dock-bg: rgba(30, 30, 30, 0.45);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: var(--bg-color);
             font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Helvetica Neue", sans-serif;
-            background: #e0e5ec;
-            min-height: 100vh;
+            overflow: hidden;
+            /* 居中布局 */
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
         }
 
-        /* 页面切换容器 */
-        .page-view {
-            transition: opacity 0.3s ease;
-        }
-
-        /* 手机容器通用样式 */
+        /* 仿iPhone容器 */
         .iphone-container {
-            width: 375px;
-            height: 750px;
-            border-radius: 30px;
-            box-shadow: 
-                0 0 0 8px #1f1f1f,
-                20px 20px 40px rgba(0,0,0,0.2);
+            background-color: var(--bg-color);
+            background-size: cover;
+            background-position: center;
             position: relative;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            color: #333;
+            transition: background-color 0.3s;
+            /* 默认全屏 (移动端/小屏) */
+            width: 100%;
+            height: 100%;
         }
 
-        /* 主页特定样式 */
-        .home-style {
-            background: linear-gradient(180deg, #f0f4f8 0%, #d9e2ec 100%);
-            padding-top: 20px;
+        /* 电脑端/大屏适配 (仿iPhone外观) */
+        @media (min-width: 768px) {
+            body {
+                /* 电脑屏幕背景 */
+                background-color: #eef2f5;
+                background-image: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            }
+            .iphone-container {
+                width: 390px;
+                height: 844px;
+                max-height: 95vh; /* 确保不超出视口高度 */
+                border-radius: 55px; /* 机身圆角 */
+                box-shadow: 
+                    0 0 0 12px #222, /* 模拟黑色边框 */
+                    0 0 0 14px #555, /* 模拟金属边 */
+                    0 30px 60px rgba(0,0,0,0.4); /* 阴影 */
+            }
         }
 
-        /* 纪念日页特定样式 */
-        .memo-style {
-            background: #fff;
+        /* 滚动区域 */
+        .scroll-area {
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-bottom: calc(90px + env(safe-area-inset-bottom)); /* Dock栏高度预留 + 安全区域 */
         }
+        .scroll-area::-webkit-scrollbar { display: none; }
 
-        /* 状态栏 - 简化 */
+        /* ================== 状态栏 ================== */
         .status-bar {
-            height: 30px;
+            height: 47px;
             width: 100%;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 0 25px;
-            font-size: 14px;
+            align-items: flex-end;
+            padding: 0 26px 10px;
+            font-size: 15px;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-            z-index: 10;
+            color: var(--text-color);
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .sb-right { display: flex; gap: 6px; align-items: center; }
+        .battery-icon { font-size: 20px; }
+
+        /* ================== 主页模块 ================== */
+        .page-content {
+            padding: 100px 20px 20px; /* 增加顶部间距，避开状态栏 */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 100%;
         }
 
-        /* ================== 主页样式 ================== */
-        .top-section { padding: 0 25px; margin-bottom: 25px; }
-        .header-card {
-            width: 100%; height: 200px;
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border-radius: 25px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            border: 1px solid rgba(255,255,255,0.4);
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            gap: 20px;
+        /* 模块B: 用户资料卡 */
+        .user-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 30px 20px; /* 增加内部空间 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px; /* 头像和输入框的间距 */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: relative;
+            margin-top: 0; /* 移除额外的顶部边距 */
+            min-height: 220px; /* 确保卡片有足够高度 */
         }
+
+        .avatar-container {
+            margin-top: 0; /* 移除负边距，让头像在卡片内 */
+            margin-bottom: 0;
+            position: relative;
+        }
+
         .avatar {
-            width: 90px; height: 90px;
+            width: 110px; /* 稍微加大头像 */
+            height: 110px;
             border-radius: 50%;
-            background: url('https://api.dicebear.com/7.x/avataaars/svg?seed=Felix') no-repeat center center;
-            background-size: cover; background-color: #fff;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            border: 4px solid white;
+            background-color: #ddd;
+            background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=Felix');
+            background-size: cover;
+            background-position: center;
+            border: 4px solid rgba(255,255,255,0.8); /* 调整边框颜色 */
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .avatar:active { transform: scale(0.95); }
+
+        .status-input {
+            width: 90%; /* 稍微收窄宽度 */
+            padding: 12px 20px;
+            border-radius: 30px; /* 变成椭圆形 */
+            border: 1px solid rgba(0,0,0,0.05);
+            background: rgba(255,255,255,0.8); /* 背景更白一点 */
+            color: var(--text-color);
+            font-size: 14px;
+            outline: none;
+            text-align: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .status-input:focus { background: #fff; }
+
+        /* 中间区域布局：左侧纪念日 + 右侧网格 */
+        .mid-section {
+            display: flex;
+            gap: 15px;
+            height: 180px; /* 固定高度以保持整齐 */
+        }
+
+        /* 模块D: 纪念日卡片 (左侧) */
+        .memorial-widget {
+            flex: 1;
+            background: #fff;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .memorial-widget:active { transform: scale(0.98); }
+        
+        /* 图片占据上半部分或铺满 */
+        .memorial-bg {
+            width: 100%; 
+            height: 100%;
+            object-fit: cover;
+            position: absolute; 
+            top: 0; left: 0;
+            z-index: 0;
+        }
+        
+        /* 下半部分毛玻璃区域 */
+        .memorial-overlay {
+            position: absolute; 
+            bottom: 0; left: 0; right: 0;
+            height: 35%; /* 占据下半部分 */
+            background: rgba(255, 255, 255, 0.2); /* 半透明白 */
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255,255,255,0.2);
+            border-radius: 0; /* 强制直角 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            z-index: 1;
+        }
+        .memorial-label { font-size: 11px; color: #555; margin-bottom: 2px; font-weight: 500;}
+        .memorial-count { font-size: 20px; font-weight: 800; color: #333; }
+        
+        .memorial-empty {
+            height: 100%; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center;
+            color: #999; gap: 10px; background: #f9f9f9;
+            z-index: 2; position: relative;
+        }
+
+        /* 模块C: 应用网格 (右侧) */
+        .app-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .app-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
             cursor: pointer;
         }
-        .input-box {
-            width: 80%; height: 40px;
-            background: #fff; border-radius: 20px;
-            padding: 0 20px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
-            color: #333; font-size: 14px;
-            border: 1px solid rgba(0,0,0,0.05);
-            outline: none; text-align: center;
-            transition: border-color 0.3s;
-        }
-        .input-box:focus { border-color: #aaa; }
         
-        .memorial-link {
-            display: block; width: 100%; text-decoration: none;
-            transition: transform 0.2s; position: relative; cursor: pointer;
-        }
-        .memorial-link:active { transform: scale(0.96); }
-        .memorial-img {
-            width: 100%; aspect-ratio: 1/1.2; object-fit: cover;
-            border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            border: 4px solid #fff;
-        }
-        .memorial-info-overlay {
-            position: absolute; bottom: 10px; left: 10px; right: 10px;
-            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px);
-            padding: 8px; border-radius: 12px; text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            animation: fadeIn 0.5s ease;
-        }
-        .memorial-title {
-            font-size: 12px; color: #555; margin-bottom: 2px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .memorial-days {
-            font-size: 20px; font-weight: 800; color: #FF9A9E; line-height: 1;
-        }
-        .memorial-days small { font-size: 10px; color: #888; font-weight: normal; }
-        
-        .main-content {
-            flex: 1; display: flex; padding: 0 25px; gap: 20px; align-items: flex-start;
-        }
-        .left-panel { width: 45%; display: flex; flex-direction: column; }
-        .right-panel {
-            flex: 1; display: grid; grid-template-columns: repeat(2, 1fr);
-            gap: 15px; align-content: start;
-        }
-        .app-item {
-            display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
-        }
         .app-icon {
-            width: 55px; height: 55px; border-radius: 14px;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 24px; color: white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            transition: transform 0.2s; position: relative;
-        }
-        .app-icon::after {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            border-radius: 14px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%);
-            pointer-events: none;
-        }
-        .app-item:hover .app-icon { transform: translateY(-2px); }
-        .app-item:active .app-icon { transform: scale(0.95); }
-        .app-name { font-size: 11px; color: #444; font-weight: 500; }
-        
-        .icon-wechat { background: linear-gradient(135deg, #09B83E, #079632); }
-        .icon-world { background: linear-gradient(135deg, #2b5876, #4e4376); }
-        .icon-settings { background: linear-gradient(135deg, #8E9EAB, #eef2f3); color: #555; }
-        .icon-beautify { background: linear-gradient(135deg, #FF9A9E, #FECFEF); }
-        
-        .dock-container { padding: 20px; display: flex; justify-content: center; margin-bottom: 10px; }
-        .dock {
-            width: 320px; height: 90px;
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-radius: 30px; display: flex; justify-content: space-evenly;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
             align-items: center;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.3);
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            transition: transform 0.2s;
+            position: relative;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
         }
-        .dock-item {
-            width: 65px; height: 65px; border-radius: 16px;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 28px; color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: all 0.2s ease; cursor: pointer; position: relative;
-        }
-        .dock-item::after {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            border-radius: 16px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%);
-            pointer-events: none;
-        }
-        .dock-item:hover { transform: translateY(-5px); }
-        .dock-item:active { transform: scale(0.95); }
-        .icon-phone { background: linear-gradient(135deg, #42e695, #3bb2b8); }
-        .icon-novel { background: linear-gradient(135deg, #F6D365, #FDA085); }
-        .icon-forum { background: linear-gradient(135deg, #84fab0, #8fd3f4); }
+        .app-icon i { pointer-events: none; }
+        .app-item:active .app-icon { transform: scale(0.9); }
 
-        /* ================== 纪念日页样式 ================== */
-        .header {
-            padding: 20px 25px; height: 80px;
-            display: flex; align-items: center; justify-content: space-between;
-            background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
-            z-index: 20; position: relative;
+        .app-label { font-size: 10px; color: var(--text-color); font-weight: 500; }
+
+        .bg-green { background: linear-gradient(135deg, #36D1DC, #5B86E5); } /* 微信风格 (用蓝色系替代避免版权太像，或者用绿色) */
+        .bg-blue { background: linear-gradient(135deg, #11998e, #38ef7d); } /* 世界书 */
+        .bg-red { background: linear-gradient(135deg, #ff9966, #ff5e62); } /* 微博 */
+        .bg-purple { background: linear-gradient(135deg, #834d9b, #d04ed6); } /* 美化 */
+
+        /* ================== Dock栏 ================== */
+        .dock-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 85px;
+            background: var(--dock-bg);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border-radius: 26px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            z-index: 100;
         }
-        .nav-btn {
-            font-size: 24px; color: #333; text-decoration: none;
-            width: 40px; height: 40px;
+
+        .dock-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            width: 60px;
+        }
+        
+        .dock-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            background: #333;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: transform 0.2s;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+        }
+        .dock-icon i { pointer-events: none; }
+        .dock-item:active .dock-icon { transform: scale(0.9); }
+        .dock-text { font-size: 10px; color: var(--text-color); font-weight: 500; }
+
+        .icon-api { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .icon-theme { background: linear-gradient(135deg, #434343 0%, black 100%); }
+        .icon-info { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+
+        /* 外观设置页面特有样式 */
+        .appearance-section { margin-bottom: 25px; }
+        .appearance-title { font-size: 14px; color: var(--secondary-text); margin-bottom: 10px; padding-left: 5px; }
+        
+        .theme-options { display: flex; gap: 15px; }
+        .theme-opt { 
+            flex: 1; padding: 15px; background: #fff; border-radius: 12px; 
+            text-align: center; border: 2px solid transparent; cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .theme-opt.active { border-color: #007aff; color: #007aff; }
+        
+        .bg-upload-area {
+            background: #fff; padding: 20px; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            cursor: pointer; border: 2px dashed #ddd;
+        }
+        .bg-preview {
+            width: 100%; height: 120px; object-fit: cover; border-radius: 8px;
+            background: #f0f0f0; display: none;
+        }
+        
+        .icon-grid-edit {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+        }
+        .icon-edit-item {
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+        }
+        .icon-edit-preview {
+            width: 50px; height: 50px; border-radius: 12px; background: #eee;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; border: none; background: none; position: relative;
+            cursor: pointer; overflow: hidden; position: relative;
+            background-size: cover; background-position: center;
         }
-        .page-title {
-            font-size: 20px; font-weight: 600; letter-spacing: 1px;
-            display: flex; align-items: center; justify-content: center; flex: 1;
+        .icon-edit-label { font-size: 10px; color: #666; text-align: center; }
+
+        /* ================== 子页面通用 ================== */
+        .sub-page {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            padding-top: 50px; /* 避开状态栏 */
+            animation: slideUp 0.3s ease;
         }
-        .dropdown-menu {
-            position: absolute; top: 60px; right: 20px;
-            background: white; border-radius: 15px;
-            padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            width: 160px; display: none; flex-direction: column;
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .page-header {
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .page-title { font-size: 24px; font-weight: bold; color: var(--text-color); }
+        .close-btn { 
+            background: #e0e0e0; border: none; width: 30px; height: 30px; 
+            border-radius: 50%; color: #333; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* 纪念日列表 */
+        .memo-list { padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .memo-item {
+            background: #fff; padding: 20px; border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex; justify-content: space-between; align-items: center;
+            position: relative;
+            user-select: none; -webkit-user-select: none; /* 禁止选中文本 */
+            cursor: pointer;
+        }
+        /* 确保点击穿透子元素，直接触发item事件 */
+        .memo-item * { pointer-events: none; }
+        
+        .memo-info h3 { font-size: 16px; margin-bottom: 5px; color: #333; }
+        .memo-info p { font-size: 12px; color: #888; }
+        .memo-days { font-size: 24px; font-weight: bold; color: #ff5e62; }
+        
+        /* 纪念日添加按钮 */
+        .fab-add {
+            position: absolute; bottom: 40px; right: 30px;
+            width: 56px; height: 56px; border-radius: 50%;
+            background: #007aff; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; box-shadow: 0 4px 15px rgba(0,122,255,0.4);
+            cursor: pointer;
+        }
+
+        /* 添加卡片样式 */
+        .add-memo-card {
+            background: #fff;
+            border-radius: 16px;
+            height: 90px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: 2px dashed #e0e0e0;
+            color: #ccc;
+            transition: all 0.2s;
+            margin-bottom: 5px; /* 与列表项的间距 */
+        }
+        .add-memo-card:active { background: #f9f9f9; border-color: #007aff; color: #007aff; }
+        .add-icon-circle {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+
+        /* 居中菜单遮罩 */
+        .menu-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 3000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
             animation: fadeIn 0.2s ease;
         }
-        .menu-item {
-            padding: 12px 15px; display: flex; align-items: center; gap: 10px;
-            color: #444; font-size: 14px; border-radius: 10px;
-            cursor: pointer; transition: background 0.2s;
-        }
-        .menu-item:hover { background: #f5f5f5; }
         
-        .content-area {
-            flex: 1; padding: 10px 25px; overflow-y: auto;
-            display: flex; flex-direction: column; gap: 20px;
-            position: relative; z-index: 1;
-        }
-        .content-area::-webkit-scrollbar { width: 0px; }
-        
-        .bg-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background-size: cover; background-position: center;
-            opacity: 0.1; z-index: 0; pointer-events: none;
-            transition: opacity 0.3s;
+        /* 居中菜单主体 */
+        .center-menu {
+            background: rgba(255,255,255,0.95);
+            width: 200px;
+            padding: 25px 20px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            animation: popInMenu 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
-        .add-card {
-            width: 100%; height: 180px; background: #f8f9fa;
-            border: 2px dashed #ddd; border-radius: 25px;
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer; transition: all 0.3s; flex-shrink: 0;
+        .menu-btn {
+            padding: 12px;
+            border-radius: 25px;
+            border: 1px solid #eee;
+            background: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.1s;
         }
-        .add-card:hover { background: #f0f0f0; border-color: #bbb; }
-        .add-card:active { transform: scale(0.98); }
-        .plus-circle {
-            width: 60px; height: 60px; border-radius: 50%; border: 2px solid #333;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 30px; color: #333;
-        }
+        .menu-btn:active { transform: scale(0.95); background: #f5f5f5; }
         
-        .memo-card {
-            width: 100%; height: 180px;
-            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
-            border-radius: 25px; padding: 25px; color: white;
-            position: relative; box-shadow: 0 10px 20px rgba(255, 154, 158, 0.3);
-            display: flex; flex-direction: column; justify-content: space-between;
-            flex-shrink: 0; animation: fadeIn 0.4s ease;
-            user-select: none; -webkit-user-select: none;
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes popInMenu { from{transform:scale(0.8);opacity:0} to{transform:scale(1);opacity:1} }
+
+        /* API页面样式 */
+        .api-form { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .form-row label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--secondary-text); }
+        .form-row input, .form-row select { 
+            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd;
+            background: #fff; font-size: 14px;
         }
-        .memo-top { display: flex; justify-content: space-between; align-items: flex-start; }
-        .memo-title { font-size: 18px; font-weight: 500; opacity: 0.9; }
-        .delete-btn {
-            background: rgba(255,255,255,0.2); border: none;
-            width: 30px; height: 30px; border-radius: 50%; color: white;
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer; transition: background 0.2s;
-        }
-        .delete-btn:hover { background: rgba(255,255,255,0.4); }
-        .memo-days { text-align: center; margin: 10px 0; }
-        .day-number { font-size: 48px; font-weight: 800; line-height: 1; }
-        .day-label { font-size: 14px; opacity: 0.8; margin-left: 5px; }
-        .memo-date {
-            font-size: 14px; opacity: 0.8; background: rgba(255,255,255,0.2);
-            padding: 5px 12px; border-radius: 12px; align-self: flex-start;
-        }
-        .pin-icon {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            background: rgba(255,255,255,0.3); padding: 4px 10px;
-            border-radius: 10px; font-size: 12px; display: flex;
-            align-items: center; gap: 4px; backdrop-filter: blur(4px);
+        .btn-primary {
+            background: #007aff; color: white; border: none; padding: 14px;
+            border-radius: 12px; font-weight: 600; font-size: 16px; margin-top: 10px; cursor: pointer;
         }
 
-        /* ================== 通用弹窗 ================== */
-        .modal-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); z-index: 100;
-            display: none; justify-content: center; align-items: center;
+        /* 弹窗通用 */
+        .modal-mask {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
             backdrop-filter: blur(5px);
         }
-        .modal {
-            width: 80%; background: white; border-radius: 20px;
-            padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .modal-box {
+            width: 80%; background: white; border-radius: 20px; padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        .modal h3 { margin-bottom: 20px; text-align: center; color: #333; }
-        .form-group { margin-bottom: 15px; }
-        .form-label { display: block; margin-bottom: 8px; font-size: 14px; color: #666; }
-        .form-input {
-            width: 100%; padding: 12px; border: 1px solid #ddd;
-            border-radius: 10px; font-size: 16px; outline: none;
-            transition: border-color 0.3s;
-        }
-        .form-input:focus { border-color: #FF9A9E; }
-        
-        .type-selector { display: flex; gap: 10px; margin-bottom: 15px; }
-        .type-option {
-            flex: 1; padding: 10px; text-align: center;
-            border: 1px solid #ddd; border-radius: 10px;
-            cursor: pointer; font-size: 14px; color: #666; transition: all 0.2s;
-        }
-        .type-option.active { background: #FF9A9E; color: white; border-color: #FF9A9E; }
-        
-        .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
-        .btn {
-            flex: 1; padding: 12px; border: none; border-radius: 12px;
-            font-size: 16px; font-weight: 600; cursor: pointer;
-        }
-        .btn-cancel { background: #f0f0f0; color: #666; }
-        .btn-confirm { background: #FF9A9E; color: white; }
-        
-        .file-upload-label {
-            display: block; padding: 10px; border: 2px dashed #ddd;
-            border-radius: 10px; text-align: center; color: #888;
-            cursor: pointer; font-size: 14px;
-        }
-        .file-upload-label:hover { border-color: #FF9A9E; background: #fff8f8; }
-        
-        .world-book-combo { position: relative; display: flex; justify-content: center; align-items: center; }
+        .modal-title { text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 18px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; }
+        .modal-btn.confirm { background: #007aff; color: white; }
+        .modal-btn.cancel { background: #f0f0f0; color: #333; }
+
     </style>
 </head>
 <body>
 
-    <!-- ================== 主页 (Page 1) ================== -->
-    <div id="page-home" class="page-view">
-        <div class="iphone-container home-style">
-            <!-- 状态栏 -->
-            <div class="status-bar">
-                <span>9:41</span>
-                <span>
-                    <i class="fas fa-signal"></i>&nbsp;
-                    <i class="fas fa-wifi"></i>&nbsp;
-                    <i class="fas fa-battery-full"></i>
-                </span>
-            </div>
-
-            <!-- 顶部区域 -->
-            <div class="top-section">
-                <div class="header-card">
-                    <div class="avatar" onclick="openAvatarModal()"></div>
-                    <input type="text" class="input-box" placeholder="请输入内容...">
-                </div>
-            </div>
-
-            <!-- 主内容区 -->
-            <div class="main-content">
-                <div class="left-panel">
-                    <!-- 跳转到纪念日页 -->
-                    <a href="#" onclick="switchToMemo(); return false;" class="memorial-link">
-                        <img id="homeMemorialImg" src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="恋爱纪念" class="memorial-img">
-                        <div class="memorial-info-overlay" id="homeMemorialInfo" style="display: none;">
-                            <div class="memorial-title" id="pinnedTitle">纪念日</div>
-                            <div class="memorial-days" id="pinnedDays">0<small>天</small></div>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="right-panel">
-                    <div class="app-item">
-                        <div class="app-icon icon-wechat"><i class="fab fa-weixin"></i></div>
-                        <span class="app-name">微信</span>
-                    </div>
-                    <div class="app-item">
-                        <div class="app-icon icon-world"><div class="world-book-combo"><i class="fas fa-earth-asia"></i></div></div>
-                        <span class="app-name">世界书</span>
-                    </div>
-                    <div class="app-item">
-                        <div class="app-icon icon-settings"><i class="fas fa-gear"></i></div>
-                        <span class="app-name">设置</span>
-                    </div>
-                    <div class="app-item">
-                        <div class="app-icon icon-beautify"><i class="fas fa-palette"></i></div>
-                        <span class="app-name">美化</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Dock栏 -->
-            <div class="dock-container">
-                <div class="dock">
-                    <div class="dock-item icon-phone" title="手机"><i class="fas fa-mobile-screen-button"></i></div>
-                    <div class="dock-item icon-novel" title="小说"><i class="fas fa-book-open"></i></div>
-                    <div class="dock-item icon-forum" title="论坛"><i class="fas fa-comments"></i></div>
-                </div>
-            </div>
-            
-            <!-- 头像弹窗 -->
-            <div class="modal-overlay" id="avatarModalOverlay">
-                <div class="modal">
-                    <h3>设置头像</h3>
-                    <div class="form-group">
-                        <label class="form-label">图片链接</label>
-                        <input type="text" class="form-input" id="avatarUrlInput" placeholder="https://...">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">或 上传本地图片</label>
-                        <label for="localAvatarInput" class="file-upload-label">
-                            <i class="fas fa-cloud-upload-alt"></i> 点击选择文件
-                        </label>
-                        <input type="file" id="localAvatarInput" accept="image/*" style="display:none;" onchange="handleAvatarFile(this)">
-                    </div>
-                    <div class="modal-actions">
-                        <button class="btn btn-cancel" onclick="closeAvatarModal()">取消</button>
-                        <button class="btn btn-confirm" onclick="saveAvatar()">确定</button>
-                    </div>
-                </div>
+    <div class="iphone-container">
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div id="clock">12:00</div>
+            <div class="sb-right">
+                <i class="fas fa-signal"></i>
+                <i class="fas fa-wifi"></i>
+                <span id="batteryLevel" style="font-size:12px; margin-right:2px;">100%</span>
+                <i class="fas fa-battery-full battery-icon" id="batteryIcon"></i>
             </div>
         </div>
-    </div>
 
-    <!-- ================== 纪念日页 (Page 2) ================== -->
-    <div id="page-memo" class="page-view" style="display: none;">
-        <div class="iphone-container memo-style">
-            <!-- 背景层 -->
-            <div class="bg-overlay" id="bgOverlay"></div>
-
-            <!-- 头部 -->
-            <div class="header">
-                <!-- 返回主页 -->
-                <button class="nav-btn" onclick="switchToHome()">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <div class="page-title">
-                    <span>纪念日</span>
-                </div>
-                <button class="nav-btn" onclick="toggleMenu()">
-                    <i class="fas fa-ellipsis"></i>
-                </button>
+        <!-- 主页面 -->
+        <div class="scroll-area">
+            <div class="page-content">
                 
-                <div class="dropdown-menu" id="dropdownMenu">
-                    <div class="menu-item" onclick="openCoverModal()">
-                        <i class="fas fa-image"></i> 更改封面
+                <!-- 模块B: 用户资料 -->
+                <div class="user-card">
+                    <div class="avatar-container">
+                        <div class="avatar" id="userAvatar" onclick="openAvatarModal()"></div>
                     </div>
+                    <input type="text" class="status-input" placeholder="输入你想说的话..." id="userStatusInput" onchange="saveUserStatus(this.value)">
                 </div>
-            </div>
 
-            <!-- 内容区域 -->
-            <div class="content-area" id="listContainer">
-                <div class="add-card" onclick="openModal()">
-                    <div class="plus-circle"><i class="fas fa-plus"></i></div>
-                </div>
-            </div>
-
-            <!-- 添加纪念日弹窗 -->
-            <div class="modal-overlay" id="modalOverlay">
-                <div class="modal">
-                    <h3>新建纪念日</h3>
-                    <div class="form-group">
-                        <label class="form-label">类型</label>
-                        <div class="type-selector">
-                            <div class="type-option active" onclick="selectType('past', this)">正数日</div>
-                            <div class="type-option" onclick="selectType('future', this)">倒数日</div>
+                <!-- 模块 C & D: 中间功能区 -->
+                <div class="mid-section">
+                    <!-- 左侧：纪念日 -->
+                    <div class="memorial-widget" onclick="openPage('page-memorial')" id="memorialWidget">
+                        <div class="memorial-empty" id="memoEmptyState">
+                            <i class="fas fa-plus-circle" style="font-size:30px;"></i>
+                            <span>点击设置纪念日</span>
+                        </div>
+                        <img src="" class="memorial-bg" id="memoWidgetBg" style="display:none;">
+                        <div class="memorial-overlay" id="memoWidgetOverlay" style="display:none;">
+                            <div class="memorial-label" id="memoWidgetTitle">纪念日</div>
+                            <div class="memorial-count" id="memoWidgetDays">0天</div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">名称</label>
-                        <input type="text" class="form-input" id="titleInput" placeholder="例如：在一起">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">日期</label>
-                        <input type="date" class="form-input" id="dateInput">
-                    </div>
-                    <div class="modal-actions">
-                        <button class="btn btn-cancel" onclick="closeModal()">取消</button>
-                        <button class="btn btn-confirm" onclick="saveMemorial()">确定</button>
-                    </div>
-                </div>
-            </div>
 
-            <!-- 更改封面弹窗 -->
-            <div class="modal-overlay" id="coverModalOverlay">
-                <div class="modal">
-                    <h3>更改背景封面</h3>
-                    <div class="form-group">
-                        <label class="form-label">网络图片链接</label>
-                        <input type="text" class="form-input" id="coverInput" placeholder="https://...">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">或 上传本地图片</label>
-                        <label for="localCoverInput" class="file-upload-label">
-                            <i class="fas fa-cloud-upload-alt"></i> 点击选择文件
-                        </label>
-                        <input type="file" id="localCoverInput" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
-                    </div>
-                    <div class="form-group">
-                        <div style="font-size:12px; color:#999; margin-bottom:5px;">快速预设：</div>
-                        <div style="display:flex; gap:10px;">
-                            <div style="width:40px; height:40px; background:#FF9A9E; border-radius:8px; cursor:pointer;" onclick="setQuickCover('linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%)')"></div>
-                            <div style="width:40px; height:40px; background:#a18cd1; border-radius:8px; cursor:pointer;" onclick="setQuickCover('linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)')"></div>
-                            <div style="width:40px; height:40px; background-image:url('https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=100'); background-size:cover; border-radius:8px; cursor:pointer;" onclick="setQuickCover('url(https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=600)')"></div>
+                    <!-- 右侧：应用网格 -->
+                    <div class="app-grid">
+                        <div class="app-item" onclick="showToast('‘微信’功能开发中')">
+                            <div class="app-icon" id="icon-wechat" style="background: #07c160;"><i class="fas fa-comment"></i></div>
+                            <span class="app-label">微信</span>
+                        </div>
+                        <div class="app-item" onclick="showToast('‘世界书’功能开发中')">
+                            <div class="app-icon" id="icon-worldbook" style="background: #3498db;"><i class="fas fa-book"></i></div>
+                            <span class="app-label">世界书</span>
+                        </div>
+                        <div class="app-item" onclick="showToast('‘微博’功能开发中')">
+                            <div class="app-icon" id="icon-weibo" style="background: #e6162d;"><i class="fab fa-weibo"></i></div>
+                            <span class="app-label">微博</span>
+                        </div>
+                        <div class="app-item" onclick="showToast('‘美化’功能开发中')">
+                            <div class="app-icon" id="icon-beauty" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i class="fas fa-palette"></i></div>
+                            <span class="app-label">美化</span>
                         </div>
                     </div>
-                    <div class="modal-actions">
-                        <button class="btn btn-cancel" onclick="closeCoverModal()">取消</button>
-                        <button class="btn btn-confirm" onclick="saveCover()">确定</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 模块E: Dock栏 -->
+        <div class="dock-container">
+            <div class="dock-item" onclick="openPage('page-api')">
+                <div class="dock-icon icon-api" id="dock-api"><i class="fas fa-cog"></i></div>
+                <span class="dock-text">API设置</span>
+            </div>
+            <div class="dock-item" onclick="openPage('page-appearance')">
+                <div class="dock-icon icon-theme" id="dock-theme"><i class="fas fa-adjust"></i></div>
+                <span class="dock-text">外观</span>
+            </div>
+            <div class="dock-item" onclick="showPhoneInfo()">
+                <div class="dock-icon icon-info" id="dock-info"><i class="fas fa-info"></i></div>
+                <span class="dock-text">查手机</span>
+            </div>
+        </div>
+
+        <!-- ================= 子页面: 外观设置 ================= -->
+        <div id="page-appearance" class="sub-page">
+            <div class="page-header">
+                <button class="close-btn" onclick="closePage('page-appearance')"><i class="fas fa-chevron-left"></i></button>
+                <div class="page-title">外观</div>
+                <div style="width:30px"></div>
+            </div>
+            <div style="padding: 20px; overflow-y:auto; padding-bottom:100px;">
+                
+                <div class="appearance-section">
+                    <div class="appearance-title">整体风格</div>
+                    <div class="theme-options">
+                        <div class="theme-opt active" id="themeOptLight" onclick="setTheme('light')">日间</div>
+                        <div class="theme-opt" id="themeOptDark" onclick="setTheme('dark')">夜间</div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- 置顶选择弹窗 (长按触发) -->
-            <div class="modal-overlay" id="pinModalOverlay">
-                <div class="modal" style="width: 70%;">
-                    <h3>管理卡片</h3>
-                    <p style="text-align: center; margin-bottom: 20px; color: #666;">您想对这个纪念日做什么？</p>
-                    <div class="modal-actions" style="flex-direction: column; gap: 10px;">
-                        <button class="btn btn-confirm" onclick="pinCurrent()">置顶</button>
-                        <button class="btn btn-cancel" style="background: #ffecb3; color: #666;" onclick="unpinCurrent()">取消置顶</button>
-                        <button class="btn btn-cancel" onclick="closePinModal()">取消</button>
+
+                <div class="appearance-section">
+                    <div class="appearance-title">背景图片 (应用于桌面)</div>
+                    <label class="bg-upload-area">
+                        <span id="bgUploadText">选择文件上传</span>
+                        <input type="file" accept="image/*" hidden onchange="handleBgUpload(this)">
+                        <img id="bgPreview" class="bg-preview">
+                    </label>
+                </div>
+
+                <div class="appearance-section">
+                    <div class="appearance-title">桌面图标更改 (点击图标上传)</div>
+                    <div class="icon-grid-edit">
+                        <!-- 主页应用 -->
+                        <div class="icon-edit-item" onclick="triggerIconUpload('icon-wechat')">
+                            <div class="icon-edit-preview" id="edit-icon-wechat" style="background: #07c160;"><i class="fas fa-comment"></i></div>
+                            <span class="icon-edit-label">微信</span>
+                        </div>
+                        <div class="icon-edit-item" onclick="triggerIconUpload('icon-worldbook')">
+                            <div class="icon-edit-preview" id="edit-icon-worldbook" style="background: #3498db;"><i class="fas fa-book"></i></div>
+                            <span class="icon-edit-label">世界书</span>
+                        </div>
+                        <div class="icon-edit-item" onclick="triggerIconUpload('icon-weibo')">
+                            <div class="icon-edit-preview" id="edit-icon-weibo" style="background: #e6162d;"><i class="fab fa-weibo"></i></div>
+                            <span class="icon-edit-label">微博</span>
+                        </div>
+                        <div class="icon-edit-item" onclick="triggerIconUpload('icon-beauty')">
+                            <div class="icon-edit-preview" id="edit-icon-beauty" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i class="fas fa-palette"></i></div>
+                            <span class="icon-edit-label">美化</span>
+                        </div>
+                        <!-- Dock 应用 -->
+                        <div class="icon-edit-item" onclick="triggerIconUpload('dock-api')">
+                            <div class="icon-edit-preview" id="edit-dock-api" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"><i class="fas fa-cog"></i></div>
+                            <span class="icon-edit-label">API</span>
+                        </div>
+                        <div class="icon-edit-item" onclick="triggerIconUpload('dock-theme')">
+                            <div class="icon-edit-preview" id="edit-dock-theme" style="background: linear-gradient(135deg, #434343 0%, black 100%);"><i class="fas fa-adjust"></i></div>
+                            <span class="icon-edit-label">外观</span>
+                        </div>
+                        <div class="icon-edit-item" onclick="triggerIconUpload('dock-info')">
+                            <div class="icon-edit-preview" id="edit-dock-info" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"><i class="fas fa-info"></i></div>
+                            <span class="icon-edit-label">查手机</span>
+                        </div>
                     </div>
+                    <!-- 隐藏的文件输入，用于图标上传 -->
+                    <input type="file" id="iconUploadInput" accept="image/*" hidden onchange="handleIconFile(this)">
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" style="flex: 1;" onclick="saveAppearanceSettings()">保存配置</button>
+                    <button class="btn-primary" style="flex: 1; background: #ff3b30;" onclick="resetAppearanceSettings()">恢复默认</button>
                 </div>
             </div>
         </div>
+
+        <!-- ================= 子页面: 纪念日 ================= -->
+        <div id="page-memorial" class="sub-page">
+            <div class="page-header">
+                <button class="close-btn" onclick="closePage('page-memorial')"><i class="fas fa-chevron-left"></i></button>
+                <div class="page-title">纪念日</div>
+                <button class="close-btn" style="opacity:0; cursor:default"></button> <!-- 占位 -->
+            </div>
+            <div class="memo-list" id="memoList">
+                <!-- 列表由JS生成 -->
+            </div>
+            <div class="fab-add" onclick="openMemoAddModal()">
+                <i class="fas fa-plus"></i>
+            </div>
+        </div>
+
+        <!-- ================= 子页面: API设置 ================= -->
+        <div id="page-api" class="sub-page">
+            <div class="page-header">
+                <button class="close-btn" onclick="closePage('page-api')"><i class="fas fa-chevron-left"></i></button>
+                <div class="page-title">API 配置</div>
+                <div style="width:30px"></div>
+            </div>
+            <div class="api-form">
+                <div class="form-row">
+                    <label>API 地址</label>
+                    <input type="text" id="apiUrl" placeholder="https://api.openai.com">
+                </div>
+                <div class="form-row">
+                    <label>密钥 (Key)</label>
+                    <input type="password" id="apiKey" placeholder="sk-...">
+                </div>
+                <div class="form-row">
+                    <label>模型 (Model)</label>
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" id="apiModel" placeholder="gpt-3.5-turbo" style="flex:1">
+                        <button style="padding:0 15px; border-radius:10px; border:1px solid #ddd; background:#f9f9f9;" onclick="fetchModels()">获取</button>
+                    </div>
+                    <select id="modelSelect" style="margin-top:5px; display:none;" onchange="document.getElementById('apiModel').value=this.value">
+                        <option>选择模型...</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="saveApiSettings()">保存配置</button>
+            </div>
+        </div>
+
+        <!-- ================= 弹窗: 头像上传 ================= -->
+        <div class="modal-mask" id="modalAvatar">
+            <div class="modal-box">
+                <div class="modal-title">更换头像</div>
+                <div class="form-row" style="margin-bottom:15px;">
+                    <label>网络图片链接</label>
+                    <input type="text" id="avatarUrlInput" placeholder="http://...">
+                </div>
+                <div class="form-row" style="text-align:center; margin-bottom:15px;">
+                    <label>或 本地上传</label>
+                    <input type="file" id="avatarFileInput" accept="image/*" style="margin-top:5px;">
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel" onclick="closeModal('modalAvatar')">取消</button>
+                    <button class="modal-btn confirm" onclick="confirmAvatarChange()">确定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 弹窗: 添加纪念日 ================= -->
+        <div class="modal-mask" id="modalMemoAdd">
+            <div class="modal-box">
+                <div class="modal-title">添加纪念日</div>
+                <div class="form-row" style="margin-bottom:10px;">
+                    <label>事件名称</label>
+                    <input type="text" id="newMemoTitle" placeholder="例如: 恋爱纪念日">
+                </div>
+                <div class="form-row" style="margin-bottom:10px;">
+                    <label>日期</label>
+                    <input type="date" id="newMemoDate">
+                </div>
+                <div class="form-row" style="margin-bottom:10px;">
+                    <label>计数方式</label>
+                    <select id="newMemoType" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd;">
+                        <option value="since">正数 (已过)</option>
+                        <option value="until">倒数 (未来)</option>
+                    </select>
+                </div>
+                <div class="form-row" style="margin-bottom:10px;">
+                    <label>背景图</label>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <input type="text" id="newMemoBg" placeholder="粘贴图片链接..." style="font-size:12px;">
+                        <div style="font-size:12px; text-align:center; color:#888;">- 或 -</div>
+                        <input type="file" id="newMemoFile" accept="image/*" style="font-size:12px;">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel" onclick="closeModal('modalMemoAdd')">取消</button>
+                    <button class="modal-btn confirm" onclick="addNewMemo()">添加</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 弹窗: 查手机 ================= -->
+        <div class="modal-mask" id="modalPhoneInfo">
+            <div class="modal-box">
+                <div class="modal-title">本机信息</div>
+                <div style="line-height: 1.8; color: #333;">
+                    <p><strong>型号：</strong> iPhone 15 Pro (Clone)</p>
+                    <p><strong>系统：</strong> iOS 17.0 (WebOS)</p>
+                    <p><strong>存储：</strong> 128 GB</p>
+                    <p><strong>电池：</strong> <span id="infoBattery">100%</span></p>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn confirm" onclick="closeModal('modalPhoneInfo')">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 长按菜单 DOM (居中) -->
+        <div class="menu-overlay" id="contextMenuOverlay" onclick="closeContextMenu(event)">
+            <div class="center-menu" id="contextMenu">
+                <button class="menu-btn" onclick="handlePin()">置顶</button>
+                <button class="menu-btn" onclick="handleUnpin()">取消置顶</button>
+                <button class="menu-btn" onclick="handleDelete()" style="color: #ff3b30;">删除</button>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // ================== 公共/切换逻辑 ==================
-        function switchToMemo() {
-            document.getElementById('page-home').style.display = 'none';
-            document.getElementById('page-memo').style.display = 'block';
-            // 切换到纪念日页时重新渲染列表（确保数据最新）
-            renderList();
-        }
+        // ================= 全局状态与初始化 =================
+        const state = {
+            memorials: JSON.parse(localStorage.getItem('memorials') || '[]'),
+            avatar: localStorage.getItem('avatar') || '',
+            status: localStorage.getItem('status') || '',
+            api: JSON.parse(localStorage.getItem('api') || '{}'),
+            theme: localStorage.getItem('theme') || 'light',
+            bgImage: localStorage.getItem('bgImage') || '',
+            customIcons: JSON.parse(localStorage.getItem('customIcons') || '{}'),
+            contextMenuTargetId: null,
+            tempIconTarget: null // 临时存储正在更换图标的目标ID
+        };
 
-        function switchToHome() {
-            document.getElementById('page-memo').style.display = 'none';
-            document.getElementById('page-home').style.display = 'block';
-            // 切换回主页时更新数据
-            loadSharedData();
-        }
-
-        // ================== 主页逻辑 ==================
+        // 初始化
         document.addEventListener('DOMContentLoaded', () => {
-            // 初始化两个页面的数据
-            loadSharedData();
+            initClock();
+            initBattery();
             loadUserData();
-            loadMemoData(); // 加载纪念日页数据
-            
-            document.querySelector('.input-box').addEventListener('input', handleInputSave);
-            
-            // 初始化日期选择器为今天
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('dateInput').value = today;
+            updateMemorialWidget(); // 首页小组件
+            applyAppearance(); // 应用外观设置
         });
 
+        // ================= 功能模块A: 状态栏 =================
+        function initClock() {
+            const update = () => {
+                const now = new Date();
+                const str = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                document.getElementById('clock').textContent = str;
+            };
+            setInterval(update, 1000);
+            update();
+        }
+
+        function initBattery() {
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then(battery => {
+                    const updateBattery = () => {
+                        const level = Math.round(battery.level * 100);
+                        document.getElementById('batteryLevel').textContent = level + '%';
+                        document.getElementById('infoBattery').textContent = level + '%';
+                        // 更新图标
+                        const icon = document.getElementById('batteryIcon');
+                        icon.className = 'fas battery-icon';
+                        if (battery.charging) icon.classList.add('fa-bolt');
+                        else if (level > 80) icon.classList.add('fa-battery-full');
+                        else if (level > 50) icon.classList.add('fa-battery-three-quarters');
+                        else if (level > 20) icon.classList.add('fa-battery-quarter');
+                        else icon.classList.add('fa-battery-empty');
+                    };
+                    updateBattery();
+                    battery.addEventListener('levelchange', updateBattery);
+                    battery.addEventListener('chargingchange', updateBattery);
+                });
+            }
+        }
+
+        // ================= 功能模块B: 用户资料 =================
         function loadUserData() {
-            const avatar = localStorage.getItem('user_avatar');
-            if (avatar) document.querySelector('.avatar').style.backgroundImage = `url('${avatar}')`;
+            if(state.avatar) document.getElementById('userAvatar').style.backgroundImage = `url('${state.avatar}')`;
+            if(state.status) document.getElementById('userStatusInput').value = state.status;
+        }
+
+        function saveUserStatus(val) {
+            state.status = val;
+            localStorage.setItem('status', val);
+        }
+
+        function openAvatarModal() {
+            document.getElementById('modalAvatar').style.display = 'flex';
+        }
+
+        function confirmAvatarChange() {
+            const urlInput = document.getElementById('avatarUrlInput');
+            const fileInput = document.getElementById('avatarFileInput');
             
-            const text = localStorage.getItem('user_status_text');
-            if (text) document.querySelector('.input-box').value = text;
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    updateAvatar(e.target.result);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else if (urlInput.value) {
+                updateAvatar(urlInput.value);
+            }
         }
 
-        function handleInputSave(e) {
-            localStorage.setItem('user_status_text', e.target.value);
+        function updateAvatar(src) {
+            state.avatar = src;
+            localStorage.setItem('avatar', src);
+            document.getElementById('userAvatar').style.backgroundImage = `url('${src}')`;
+            closeModal('modalAvatar');
+            // 清理输入
+            document.getElementById('avatarUrlInput').value = '';
+            document.getElementById('avatarFileInput').value = '';
         }
 
-        function openAvatarModal() { document.getElementById('avatarModalOverlay').style.display = 'flex'; }
-        function closeAvatarModal() { document.getElementById('avatarModalOverlay').style.display = 'none'; }
+        // ================= 功能模块D: 纪念日 =================
+        function updateMemorialWidget() {
+            // 查找置顶的，如果没有则显示第一个，如果列表为空显示空状态
+            const pinned = state.memorials.find(m => m.isPinned) || state.memorials[0];
+            const widgetBg = document.getElementById('memoWidgetBg');
+            const widgetOverlay = document.getElementById('memoWidgetOverlay');
+            const widgetEmpty = document.getElementById('memoEmptyState');
+            const widget = document.getElementById('memorialWidget');
 
-        function handleAvatarFile(input) {
+            if (pinned) {
+                const days = calculateDays(pinned.date);
+                const isFuture = pinned.type === 'until';
+                const prefix = isFuture ? '还有' : '已经';
+                
+                document.getElementById('memoWidgetTitle').textContent = `${pinned.title} ${prefix}`;
+                document.getElementById('memoWidgetDays').textContent = `${Math.abs(days)} 天`;
+                
+                if (pinned.bg) {
+                    widgetBg.src = pinned.bg;
+                    widgetBg.style.display = 'block';
+                    widget.style.background = '#fff'; // 重置背景色
+                } else {
+                    // 无图片时显示渐变
+                    widgetBg.style.display = 'none';
+                    widget.style.background = 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)';
+                }
+                
+                widgetOverlay.style.display = 'flex';
+                widgetEmpty.style.display = 'none';
+            } else {
+                widgetBg.style.display = 'none';
+                widgetOverlay.style.display = 'none';
+                widgetEmpty.style.display = 'flex';
+                widget.style.background = '#fff';
+            }
+        }
+
+        function calculateDays(dateStr) {
+            const target = new Date(dateStr);
+            const today = new Date();
+            target.setHours(0,0,0,0); today.setHours(0,0,0,0);
+            return Math.floor((today - target) / (1000 * 60 * 60 * 24));
+        }
+
+        function openMemoAddModal() {
+            document.getElementById('newMemoDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('newMemoTitle').value = '';
+            document.getElementById('newMemoBg').value = '';
+            document.getElementById('newMemoFile').value = '';
+            document.getElementById('modalMemoAdd').style.display = 'flex';
+        }
+
+        function addNewMemo() {
+            const title = document.getElementById('newMemoTitle').value;
+            const date = document.getElementById('newMemoDate').value;
+            const type = document.getElementById('newMemoType').value;
+            const urlBg = document.getElementById('newMemoBg').value;
+            const fileInput = document.getElementById('newMemoFile');
+
+            if (!title || !date) return alert('请填写标题和日期');
+
+            const save = (finalBg) => {
+                const newMemo = {
+                    id: Date.now(),
+                    title,
+                    date,
+                    type, // since or until
+                    bg: finalBg,
+                    isPinned: false
+                };
+                state.memorials.push(newMemo);
+                saveMemorials();
+                renderMemoList();
+                closeModal('modalMemoAdd');
+            };
+
+            // 处理文件上传
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => save(e.target.result);
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                save(urlBg);
+            }
+        }
+
+        function renderMemoList() {
+            const list = document.getElementById('memoList');
+            list.innerHTML = '';
+            
+            const sorted = [...state.memorials].sort((a,b) => (b.isPinned?1:0) - (a.isPinned?1:0));
+
+            sorted.forEach(item => {
+                const days = calculateDays(item.date);
+                const isFuture = item.type === 'until';
+                const el = document.createElement('div');
+                el.className = 'memo-item';
+                if(item.isPinned) el.style.border = '2px solid #007aff';
+                
+                // 允许长按
+                el.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    showContextMenu(e, item.id);
+                };
+
+                el.innerHTML = `
+                    <div class="memo-info">
+                        <h3>${item.title}</h3>
+                        <p>${item.date} ${isFuture ? '(倒数)' : '(已过)'}</p>
+                    </div>
+                    <div class="memo-days">${Math.abs(days)} <span style="font-size:12px;color:#888;">天</span></div>
+                `;
+
+                // 触摸设备长按模拟
+                let timer;
+                const start = (e) => {
+                    timer = setTimeout(() => showContextMenu(e, item.id), 600);
+                };
+                const end = () => clearTimeout(timer);
+                
+                el.addEventListener('touchstart', start);
+                el.addEventListener('touchend', end);
+                el.addEventListener('touchmove', end); // 移动则取消长按
+                
+                // PC鼠标长按（mousedown）已经在上面 oncontextmenu 覆盖了右键，这里补充左键长按
+                el.addEventListener('mousedown', (e) => {
+                    if(e.button === 0) start(e);
+                });
+                el.addEventListener('mouseup', end);
+                el.addEventListener('mouseleave', end);
+                
+                list.appendChild(el);
+            });
+        }
+
+        function showContextMenu(e, id) {
+            e.preventDefault();
+            state.contextMenuTargetId = id;
+            // 显示居中菜单
+            document.getElementById('contextMenuOverlay').style.display = 'flex';
+        }
+
+        function closeContextMenu(e) {
+            // 点击遮罩层时关闭
+            if (e.target.id === 'contextMenuOverlay') {
+                document.getElementById('contextMenuOverlay').style.display = 'none';
+            }
+        }
+
+        function handlePin() {
+            const id = state.contextMenuTargetId;
+            state.memorials.forEach(m => m.isPinned = (m.id === id));
+            saveMemorials();
+            renderMemoList();
+            document.getElementById('contextMenuOverlay').style.display = 'none';
+        }
+
+        function handleUnpin() {
+            const id = state.contextMenuTargetId;
+            const target = state.memorials.find(m => m.id === id);
+            if(target) target.isPinned = false;
+            saveMemorials();
+            renderMemoList();
+            document.getElementById('contextMenuOverlay').style.display = 'none';
+        }
+
+        function handleDelete() {
+            const id = state.contextMenuTargetId;
+            // 短暂延时让菜单关闭动画（如果需要），或者直接关闭
+            document.getElementById('contextMenuOverlay').style.display = 'none';
+            
+            setTimeout(() => {
+                if(confirm('确定删除?')) {
+                    state.memorials = state.memorials.filter(m => m.id !== id);
+                    saveMemorials();
+                    renderMemoList();
+                }
+            }, 100);
+        }
+
+        function saveMemorials() {
+            localStorage.setItem('memorials', JSON.stringify(state.memorials));
+            updateMemorialWidget();
+        }
+
+        // ================= 页脚功能区 & API =================
+        function saveApiSettings() {
+            state.api = {
+                url: document.getElementById('apiUrl').value.replace(/\/$/, ''),
+                key: document.getElementById('apiKey').value,
+                model: document.getElementById('apiModel').value
+            };
+            localStorage.setItem('api', JSON.stringify(state.api));
+            alert('API 配置已保存');
+            closePage('page-api');
+        }
+
+        async function fetchModels() {
+            const key = document.getElementById('apiKey').value;
+            let url = document.getElementById('apiUrl').value.replace(/\/$/, '');
+            if(!key || !url) return alert('请先填写地址和Key');
+
+            const btn = event.target;
+            btn.textContent = '...';
+            btn.disabled = true;
+
+            try {
+                // 尝试标准的 OpenAI 格式 /v1/models
+                const res = await fetch(`${url}/v1/models`, {
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+                if(!res.ok) throw new Error('请求失败: ' + res.status);
+                
+                const data = await res.json();
+                const select = document.getElementById('modelSelect');
+                select.innerHTML = '<option value="">选择模型...</option>';
+                
+                // 兼容不同格式的返回
+                const list = data.data || data.models || [];
+                if(list.length === 0) throw new Error('未找到模型');
+                
+                list.sort((a,b) => a.id.localeCompare(b.id)).forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.id;
+                    select.appendChild(opt);
+                });
+                
+                select.style.display = 'block';
+                alert(`获取成功，共 ${list.length} 个模型`);
+            } catch (err) {
+                alert('获取失败: ' + err.message);
+                // 即使失败也提供默认选项以便用户继续
+                const select = document.getElementById('modelSelect');
+                select.style.display = 'block';
+                select.innerHTML = `
+                    <option value="gpt-3.5-turbo">gpt-3.5-turbo (默认)</option>
+                    <option value="gpt-4">gpt-4</option>
+                `;
+            } finally {
+                btn.textContent = '获取';
+                btn.disabled = false;
+            }
+        }
+
+        // ================= 外观设置逻辑 =================
+        function applyAppearance() {
+            // 应用主题
+            if(state.theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('themeOptDark').classList.add('active');
+                document.getElementById('themeOptLight').classList.remove('active');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                document.getElementById('themeOptLight').classList.add('active');
+                document.getElementById('themeOptDark').classList.remove('active');
+            }
+
+            // 应用背景图
+            if(state.bgImage) {
+                document.querySelector('.iphone-container').style.backgroundImage = `url('${state.bgImage}')`;
+                document.getElementById('bgPreview').src = state.bgImage;
+                document.getElementById('bgPreview').style.display = 'block';
+                document.getElementById('bgUploadText').style.display = 'none';
+            }
+
+            // 应用自定义图标
+            for (const [id, src] of Object.entries(state.customIcons)) {
+                const el = document.getElementById(id);
+                const editEl = document.getElementById('edit-' + id);
+                if(el) {
+                    el.style.backgroundImage = `url('${src}')`;
+                    el.querySelector('i').style.display = 'none'; // 隐藏原有 FontAwesome 图标
+                }
+                if(editEl) {
+                    editEl.style.backgroundImage = `url('${src}')`;
+                    editEl.querySelector('i').style.display = 'none';
+                }
+            }
+        }
+
+        function setTheme(mode) {
+            state.theme = mode;
+            if(mode === 'light') {
+                document.getElementById('themeOptLight').classList.add('active');
+                document.getElementById('themeOptDark').classList.remove('active');
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.getElementById('themeOptDark').classList.add('active');
+                document.getElementById('themeOptLight').classList.remove('active');
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        }
+
+        function handleBgUpload(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('avatarUrlInput').value = e.target.result;
+                reader.onload = (e) => {
+                    const src = e.target.result;
+                    state.bgImage = src;
+                    // 预览
+                    document.getElementById('bgPreview').src = src;
+                    document.getElementById('bgPreview').style.display = 'block';
+                    document.getElementById('bgUploadText').style.display = 'none';
+                    // 实时应用到桌面以便查看
+                    document.querySelector('.iphone-container').style.backgroundImage = `url('${src}')`;
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        function saveAvatar() {
-            const url = document.getElementById('avatarUrlInput').value;
-            if (url) {
-                localStorage.setItem('user_avatar', url);
-                document.querySelector('.avatar').style.backgroundImage = `url('${url}')`;
-                closeAvatarModal();
-            }
+        function triggerIconUpload(id) {
+            state.tempIconTarget = id;
+            document.getElementById('iconUploadInput').click();
         }
 
-        function loadSharedData() {
-            // 同步封面
-            const sharedCover = localStorage.getItem('shared_cover_image');
-            const imgEl = document.getElementById('homeMemorialImg');
-            if (sharedCover && imgEl) {
-                let src = sharedCover;
-                if (sharedCover.startsWith('url(')) {
-                    src = sharedCover.slice(4, -1).replace(/["']/g, "");
-                }
-                if (src.startsWith('http') || src.startsWith('data:image')) {
-                    imgEl.src = src;
-                }
-            }
-            
-            // 同步置顶纪念日
-            const memorialsStr = localStorage.getItem('love_memorials');
-            if (memorialsStr) {
-                const memorials = JSON.parse(memorialsStr);
-                const pinnedItem = memorials.find(m => m.isPinned);
-                const infoEl = document.getElementById('homeMemorialInfo');
-                
-                if (pinnedItem) {
-                    const days = calculateDays(pinnedItem.date);
-                    const label = pinnedItem.type === 'future' ? '天后' : '天';
-                    document.getElementById('pinnedTitle').textContent = pinnedItem.title;
-                    document.getElementById('pinnedDays').innerHTML = `${Math.abs(days)}<small>${label}</small>`;
-                    infoEl.style.display = 'block';
-                } else {
-                    infoEl.style.display = 'none';
-                }
-            }
-        }
-
-        function calculateDays(dateStr) {
-            const targetDate = new Date(dateStr);
-            const today = new Date();
-            targetDate.setHours(0,0,0,0);
-            today.setHours(0,0,0,0);
-            const diffTime = today - targetDate;
-            return Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        }
-
-        // ================== 纪念日页逻辑 ==================
-        let memorials = [];
-        let currentType = 'past';
-        let currentLongPressIndex = -1;
-
-        function loadMemoData() {
-            const savedData = localStorage.getItem('love_memorials');
-            if (savedData) {
-                memorials = JSON.parse(savedData);
-                renderList();
-            }
-            const savedCover = localStorage.getItem('page_cover');
-            if (savedCover) applyCover(savedCover);
-        }
-
-        function selectType(type, element) {
-            currentType = type;
-            document.querySelectorAll('.type-option').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
-        }
-
-        function renderList() {
-            const container = document.getElementById('listContainer');
-            // 保存添加按钮，清空其他
-            const addCard = document.querySelector('.add-card');
-            // 为了简单，我们每次都重建
-            container.innerHTML = '';
-            
-            const sortedMemorials = [...memorials].sort((a, b) => {
-                return (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0);
-            });
-            
-            sortedMemorials.forEach((item) => {
-                const originalIndex = memorials.findIndex(m => m.id === item.id);
-                const days = calculateDays(item.date);
-                const dayValue = Math.abs(days);
-                const label = item.type === 'future' ? '天后' : '天';
-                const icon = item.type === 'future' ? '<i class="fas fa-hourglass-half"></i>' : '<i class="fas fa-heart"></i>';
-                
-                const gradients = [
-                    'linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%)',
-                    'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-                    'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-                    'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)'
-                ];
-                const colorIndex = item.id % gradients.length;
-                const bgStyle = gradients[colorIndex];
-                const pinHtml = item.isPinned ? '<div class="pin-icon"><i class="fas fa-thumbtack"></i> 已置顶</div>' : '';
-
-                const cardDiv = document.createElement('div');
-                cardDiv.className = 'memo-card';
-                cardDiv.style.background = bgStyle;
-                cardDiv.innerHTML = `
-                    ${pinHtml}
-                    <div class="memo-top">
-                        <div class="memo-title">${icon} ${item.title}</div>
-                        <button class="delete-btn" onclick="deleteMemorial(${originalIndex}); event.stopPropagation();">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="memo-days">
-                        <span class="day-number">${dayValue}</span>
-                        <span class="day-label">${label}</span>
-                    </div>
-                    <div class="memo-date">目标日: ${item.date}</div>
-                `;
-                addLongPressEvent(cardDiv, originalIndex);
-                container.appendChild(cardDiv);
-            });
-            container.appendChild(addCard);
-        }
-        
-        function addLongPressEvent(element, index) {
-            let timer;
-            element.addEventListener('touchstart', (e) => {
-                timer = setTimeout(() => { showPinModal(index); }, 600);
-            });
-            element.addEventListener('touchend', () => clearTimeout(timer));
-            element.addEventListener('touchmove', () => clearTimeout(timer));
-            element.addEventListener('mousedown', () => {
-                timer = setTimeout(() => { showPinModal(index); }, 600);
-            });
-            element.addEventListener('mouseup', () => clearTimeout(timer));
-            element.addEventListener('mouseleave', () => clearTimeout(timer));
-        }
-
-        function showPinModal(index) {
-            currentLongPressIndex = index;
-            document.getElementById('pinModalOverlay').style.display = 'flex';
-        }
-        function closePinModal() {
-            document.getElementById('pinModalOverlay').style.display = 'none';
-            currentLongPressIndex = -1;
-        }
-        function pinCurrent() {
-            if (currentLongPressIndex > -1) {
-                memorials.forEach(m => m.isPinned = false);
-                memorials[currentLongPressIndex].isPinned = true;
-                saveAndRefresh();
-                closePinModal();
-            }
-        }
-        function unpinCurrent() {
-            if (currentLongPressIndex > -1) {
-                memorials[currentLongPressIndex].isPinned = false;
-                saveAndRefresh();
-                closePinModal();
-            }
-        }
-        function saveAndRefresh() {
-            localStorage.setItem('love_memorials', JSON.stringify(memorials));
-            renderList();
-        }
-        
-        function openModal() { document.getElementById('modalOverlay').style.display = 'flex'; }
-        function closeModal() {
-            document.getElementById('modalOverlay').style.display = 'none';
-            document.getElementById('titleInput').value = '';
-        }
-
-        function saveMemorial() {
-            const title = document.getElementById('titleInput').value.trim();
-            const date = document.getElementById('dateInput').value;
-            if (!title || !date) { alert('请填写完整信息'); return; }
-            memorials.push({
-                title: title, date: date, type: currentType, id: Date.now(), isPinned: false
-            });
-            localStorage.setItem('love_memorials', JSON.stringify(memorials));
-            renderList();
-            closeModal();
-        }
-
-        function deleteMemorial(index) {
-            if(confirm('确定要删除这个纪念日吗？')) {
-                memorials.splice(index, 1);
-                localStorage.setItem('love_memorials', JSON.stringify(memorials));
-                renderList();
-            }
-        }
-
-        function toggleMenu() {
-            const menu = document.getElementById('dropdownMenu');
-            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
-        }
-
-        function openCoverModal() {
-            document.getElementById('coverModalOverlay').style.display = 'flex';
-            toggleMenu();
-        }
-        function closeCoverModal() { document.getElementById('coverModalOverlay').style.display = 'none'; }
-        function setQuickCover(value) { document.getElementById('coverInput').value = value; }
-        
-        function handleFileUpload(input) {
-            if (input.files && input.files[0]) {
+        function handleIconFile(input) {
+            if (input.files && input.files[0] && state.tempIconTarget) {
                 const reader = new FileReader();
-                reader.onload = function(e) { document.getElementById('coverInput').value = e.target.result; };
+                reader.onload = (e) => {
+                    const src = e.target.result;
+                    state.customIcons[state.tempIconTarget] = src;
+                    
+                    // 更新设置页预览
+                    const editEl = document.getElementById('edit-' + state.tempIconTarget);
+                    if(editEl) {
+                        editEl.style.backgroundImage = `url('${src}')`;
+                        editEl.querySelector('i').style.display = 'none';
+                    }
+                    
+                    // 实时更新主页/Dock图标
+                    const mainEl = document.getElementById(state.tempIconTarget);
+                    if(mainEl) {
+                        mainEl.style.backgroundImage = `url('${src}')`;
+                        mainEl.querySelector('i').style.display = 'none';
+                    }
+                };
                 reader.readAsDataURL(input.files[0]);
             }
+            // 重置 input 以便允许重复选择同一文件
+            input.value = '';
         }
 
-        function saveCover() {
-            const cover = document.getElementById('coverInput').value;
-            if(cover) {
-                localStorage.setItem('shared_cover_image', cover);
-                alert("已更新主页纪念日封面");
-                closeCoverModal();
+        function saveAppearanceSettings() {
+            localStorage.setItem('theme', state.theme);
+            localStorage.setItem('bgImage', state.bgImage);
+            localStorage.setItem('customIcons', JSON.stringify(state.customIcons));
+            alert('外观设置已保存');
+            closePage('page-appearance');
+        }
+
+        function resetAppearanceSettings() {
+            if(!confirm('确定要恢复默认主题吗？这将清除所有自定义背景和图标。')) return;
+
+            // 1. 重置状态数据
+            state.theme = 'light';
+            state.bgImage = '';
+            state.customIcons = {};
+
+            // 2. 清除本地存储
+            localStorage.removeItem('theme');
+            localStorage.removeItem('bgImage');
+            localStorage.removeItem('customIcons');
+
+            // 3. 恢复主题 (Light)
+            setTheme('light');
+
+            // 4. 恢复背景图
+            document.querySelector('.iphone-container').style.backgroundImage = '';
+            document.getElementById('bgPreview').src = '';
+            document.getElementById('bgPreview').style.display = 'none';
+            document.getElementById('bgUploadText').style.display = 'block';
+
+            // 5. 恢复图标
+            const iconIds = [
+                'icon-wechat', 'icon-worldbook', 'icon-weibo', 'icon-beauty',
+                'dock-api', 'dock-theme', 'dock-info'
+            ];
+            
+            iconIds.forEach(id => {
+                // 恢复主页/Dock图标
+                const el = document.getElementById(id);
+                if(el) {
+                    el.style.backgroundImage = '';
+                    const icon = el.querySelector('i');
+                    if(icon) icon.style.display = '';
+                }
+                
+                // 恢复设置页预览图标
+                const editEl = document.getElementById('edit-' + id);
+                if(editEl) {
+                    editEl.style.backgroundImage = '';
+                    const editIcon = editEl.querySelector('i');
+                    if(editIcon) editIcon.style.display = '';
+                }
+            });
+
+            // 提示并关闭
+            alert('已恢复默认外观');
+            // closePage('page-appearance'); // 可选：恢复后是否关闭页面，这里保持打开以便用户确认
+        }
+
+        function showPhoneInfo() {
+            document.getElementById('modalPhoneInfo').style.display = 'flex';
+        }
+
+        // ================= 导航 & 通用 =================
+        function openPage(id) {
+            document.getElementById(id).style.display = 'flex';
+            if(id === 'page-memorial') renderMemoList();
+            if(id === 'page-api') {
+                if(state.api.url) document.getElementById('apiUrl').value = state.api.url;
+                if(state.api.key) document.getElementById('apiKey').value = state.api.key;
+                if(state.api.model) document.getElementById('apiModel').value = state.api.model;
+            }
+            if(id === 'page-appearance') {
+                // 确保打开时 UI 状态正确
+                applyAppearance();
             }
         }
-        
-        function applyCover(value) {
-            const overlay = document.getElementById('bgOverlay');
-            if (value.startsWith('url') || value.startsWith('http') || value.startsWith('data:image')) {
-                const bgValue = (value.startsWith('http') || value.startsWith('data:image')) ? `url(${value})` : value;
-                overlay.style.backgroundImage = bgValue;
-                overlay.style.background = bgValue + " center/cover no-repeat";
-            } else {
-                overlay.style.background = value;
-            }
-            overlay.style.opacity = '1';
+
+        function closePage(id) {
+            document.getElementById(id).style.display = 'none';
         }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function showToast(msg) {
+            // 简单的toast提示
+            const div = document.createElement('div');
+            div.style.cssText = `
+                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.7); color: white; padding: 15px 25px;
+                border-radius: 20px; z-index: 3000; font-size: 14px;
+                backdrop-filter: blur(5px);
+            `;
+            div.textContent = msg;
+            document.querySelector('.iphone-container').appendChild(div);
+            setTimeout(() => div.remove(), 2000);
+        }
+
     </script>
 </body>
 </html>
